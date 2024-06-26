@@ -1,7 +1,6 @@
-from django.http import HttpResponse, FileResponse, Http404
+from django.http import HttpResponse, FileResponse, HttpResponseNotFound
 from django.shortcuts import render
 from django.core.validators import FileExtensionValidator
-from django.core.exceptions import ValidationError
 from .models import Images
 from PIL import Image 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -14,7 +13,6 @@ def upload_images(request):
     if request.method == "POST":
         images = request.FILES.getlist('images')
         allowed_extensions = ['jpg', 'jpeg']
-        x_id = 0x011a
         for img in images:
             try:     
                 validator = FileExtensionValidator(allowed_extensions, message='Only  "jpeg or jpg" files are allowed.')
@@ -29,14 +27,15 @@ def upload_images(request):
                 context = {
                  'error_message': error_message
                 }
-        
-            return redirect('../success/')
+        return redirect('../success/')
 
     return render(request, 'index.html')
 
 def success(request):
     image_files = Images.objects.all()
-    if len(image_files) != 0:
+    is_renamed = False
+    file_counter = 0
+    if len(image_files) != 0 and is_renamed == False:
         try:
             for image in image_files:
                 old_filename = os.path.basename(image.image.name)
@@ -48,19 +47,15 @@ def success(request):
                 x_resolution = exifdata.get(x_id)
                 y_resolution = exifdata.get(y_id)
 
-                # if isinstance(x_resolution, int):   
-            # get width and height 
+                # get width and height 
                 width = opened_image.width 
                 height = opened_image.height 
-                
-                
 
                 # for tagid in exifdata:
                 #     tagname = TAGS.get(tagid, tagid)
                 #     value = exifdata.get(tagid)
 
                 # inches
-                # if isinstance(x_resolution, int):
                 dimension_x = round(float(width/x_resolution), 2)
                 dimension_y = round(float(height/y_resolution), 2)
 
@@ -76,24 +71,35 @@ def success(request):
                 opened_image.close()
 
                 new_file_path = os.path.join(settings.MEDIA_ROOT, new_file_name)
+
+                file_counter += 1
+                
+                if file_counter == len(image_files):
+                    is_renamed = True
+
                 try:
                     os.rename(path, new_file_path)
                     image.image.name = new_file_name
                     image.save()
-                    context = {
-                    'img_list': image_files,
-                    'filename': filename_mask(image.image.name)
-                    }
+                    
+    
                 except FileNotFoundError:
-                    return HttpResponse('Error: File not found', status=404)
-                except:
-                   return HttpResponse("Source not from editing software.", status=500)
-                
-                    # return redirect('../upload')
-            return render(request, 'uploads.html', context)
+                    return render('../upload/') 
+                    # return HttpResponseNotFound('File not found')
+                except TypeError:
+                    return HttpResponse("Metadata error")
         except TypeError:
-            return HttpResponse('jpg source file not came from editing software')
-
+             return redirect('../success/')
+        
+        context = {
+            'img_list': image_files
+        }
+            
+        return render(request, 'uploads.html', context)     
+                     
+        
+        
+        
 def download_image(request, image_id):
     image = get_object_or_404(Images, pk=image_id)
     file_path = os.path.join(settings.MEDIA_ROOT, image.image.name)
@@ -103,8 +109,15 @@ def download_image(request, image_id):
     response['Content-Disposition'] = f'attachment; filename="{file_name}"'
     return response
 
+def delete(request):
+    image_files = Images.objects.all()
+    image_files.delete()
+    return redirect('../upload/')
+
 def filename_mask(image_file):
     file = image_file.split('\\')
     filesplit = image_file.split('/')
     filename = filesplit[2]
     return filename
+
+

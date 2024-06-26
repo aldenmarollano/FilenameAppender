@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Appender</title>
+    <link rel="stylesheet" href="{% static 'design.css' %}">
+    <link rel="stylesheet" href="{% static 'bootstrap.min.css' %}">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="text-center title">{{ header_message }}</h2>
+                    </div>
+                        <div class="card-body">
+                            <div id="errorPopup" class="popup">
+                                <p id="errorText"></p>
+                                <!-- <button onclick="closePopup()">Close</button> -->
+                            </div>
+                            <form method = "POST" action = "{% url 'image:upload_images' %}" enctype="multipart/form-data" class="form">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label class="message" for="images">Select multiple files (jpg, jpeg)</label>
+                                    <input type="file" class="form-control-file border border-default" id="images" name="images" multiple accept=".jpg, .jpeg" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Upload Files</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{% load custom_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Successful</title>
+</head>
+<body>
+    <h2>Image List</h2>
+    <form>
+        <ul>
+        {% for img in img_list %}
+            <li>
+                <a href="{{ img.image.url }}">{{ img.image.name|filename_mask }}</a>
+                <button type="submit" value="{{ image.image.id }}" ><a href="{% url 'image:download' img.pk %}">Download</button>
+            </li>
+        {% endfor %}
+        </ul>
+    </form>
+    <button type="reset" value="reset" ><a href="{% url 'image:delete' %}"> Upload Another</button>
+</body>
+</html>
