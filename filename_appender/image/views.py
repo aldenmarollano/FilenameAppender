@@ -20,7 +20,7 @@ def upload_images(request):
                 image_file = Images.objects.create(image=img)
                 image_file.save()
                 
-                # raise Exception("Something went wrong")
+                raise Exception("Something went wrong")
             
             except Exception as e:
                 error_message = f"Error: {str(e)}"
@@ -33,9 +33,12 @@ def upload_images(request):
 
 def success(request):
     image_files = Images.objects.all()
-    is_renamed = False
-    file_counter = 0
-    if len(image_files) != 0 and is_renamed == False:
+
+    
+    file_counter=0
+    file_num = len(image_files)
+    
+    if file_num != 0:
         try:
             for image in image_files:
                 old_filename = os.path.basename(image.image.name)
@@ -51,10 +54,7 @@ def success(request):
                 width = opened_image.width 
                 height = opened_image.height 
 
-                # for tagid in exifdata:
-                #     tagname = TAGS.get(tagid, tagid)
-                #     value = exifdata.get(tagid)
-
+         
                 # inches
                 dimension_x = round(float(width/x_resolution), 2)
                 dimension_y = round(float(height/y_resolution), 2)
@@ -71,11 +71,7 @@ def success(request):
                 opened_image.close()
 
                 new_file_path = os.path.join(settings.MEDIA_ROOT, new_file_name)
-
-                file_counter += 1
-                
-                if file_counter == len(image_files):
-                    is_renamed = True
+                   
 
                 try:
                     os.rename(path, new_file_path)
@@ -84,10 +80,11 @@ def success(request):
                     
     
                 except FileNotFoundError:
-                    return render('../upload/') 
-                    # return HttpResponseNotFound('File not found')
+                    return HttpResponseNotFound('File not found')
+                
                 except TypeError:
-                    return HttpResponse("Metadata error")
+                    return HttpResponse("Metadata error")                
+                
         except TypeError:
              return redirect('../success/')
         
