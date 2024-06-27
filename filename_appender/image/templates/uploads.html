@@ -9,6 +9,7 @@
     <form>
         <ul>
         {% for img in img_list %}
+        {% csrf_token %}
             <li>
                 <a href="{{ img.image.url }}">{{ img.image.name|filename_mask }}</a>
                 <button type="submit" value="{{ image.image.id }}" ><a href="{% url 'image:download' img.pk %}">Download</button>

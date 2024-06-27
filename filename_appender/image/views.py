@@ -35,12 +35,12 @@ def upload_images(request):
                 error_message = str(e)
                 return render(request, 'index.html', {'response_message': error_message})
             
-        return redirect('../success/')
+        return redirect('upload/')
 
     return render(request, 'index.html')
 
 
-def success(request):
+def upload_view(request):
     image_files = Images.objects.all()
     file_num = len(image_files)
 
@@ -79,7 +79,6 @@ def success(request):
                 dimension_fx = round(float(dimension_x/12), 2)
                 dimension_fy = round(float(dimension_y/12), 2)
 
-                #New Filename concantenating dimension
                 dimension_resutl = f" ({dimension_x} in x {dimension_y} in)({dimension_fx} ft x {dimension_fy} ft)"
                 lastDotIndex = path.index('.')
                 new_file_name = path[0:lastDotIndex] + dimension_resutl + path[lastDotIndex:]
@@ -102,7 +101,7 @@ def success(request):
             return render(request, 'index.html', {'response_message': value_error})
     if file_num == 0:
         request.session.flush()
-        return redirect('../upload')  
+        return redirect('/')  
 
     context = {
         'img_list': image_files,
@@ -124,13 +123,13 @@ def download_image(request, image_id):
     return response
 
 
-def reset_image(request):
+def reset_view(request):
     path = settings.MEDIA_ROOT
     delete_images(path)
     image_files = Images.objects.all()
     image_files.delete()
     request.session.flush()
-    return redirect('../upload/')
+    return redirect('/')
 
 
 def has_exif_data(image_file):
