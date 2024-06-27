@@ -28,6 +28,13 @@
                                 </div>
                                 <button type="submit" class="btn btn-primary">Upload Files</button>
                             </form>
+                            <div id="response-area">
+                                <!-- This is where the HttpResponse will be displayed -->
+                                {% block response_content %}
+                                <p>{{ response_message }}</p>
+                                    <!-- Initially empty or can have default content -->
+                                {% endblock %}
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -8,4 +8,4 @@ class Images(models.Model):
 
     def __str__(self):
         imagename = self.image.name 
-        return  imagename 
+        return  imagename

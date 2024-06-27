@@ -1,3 +1,4 @@
+from django.forms import ValidationError
 from django.http import HttpResponse, FileResponse, HttpResponseNotFound
 from django.shortcuts import render
 from django.core.validators import FileExtensionValidator
@@ -12,31 +13,44 @@ from django.conf import settings
 def upload_images(request):
     if request.method == "POST":
         images = request.FILES.getlist('images')
+        global prev_files
+        prev_files = len(images)
         allowed_extensions = ['jpg', 'jpeg']
+        with_exifdata = True
         for img in images:
-            try:     
+            try:
                 validator = FileExtensionValidator(allowed_extensions, message='Only  "jpeg or jpg" files are allowed.')
                 validator(img)
-                image_file = Images.objects.create(image=img)
-                image_file.save()
-                
-                raise Exception("Something went wrong")
+
+                with_exifdata = has_exif_data(img)
+
+                if with_exifdata:
+                    image_file = Images(image=img)
+                    image_file.save()
+
+                else:
+                    continue
+
+            except (AttributeError, KeyError, IndexError, IOError, ValueError, FileNotFoundError, ValidationError) as e:
+                error_message = str(e)
+                return render(request, 'index.html', {'response_message': error_message})
             
-            except Exception as e:
-                error_message = f"Error: {str(e)}"
-                context = {
-                 'error_message': error_message
-                }
         return redirect('../success/')
 
     return render(request, 'index.html')
 
+
 def success(request):
     image_files = Images.objects.all()
-
-    
-    file_counter=0
     file_num = len(image_files)
+
+    if request.session.get('action_processed', False):
+        context = {
+        'img_list': image_files,
+        'unconverted': prev_files - file_num
+         }
+        return render(request, 'uploads.html', context) 
+        
     
     if file_num != 0:
         try:
@@ -45,6 +59,8 @@ def success(request):
                 path = os.path.join(settings.MEDIA_ROOT, old_filename)
                 opened_image = Image.open(path)
                 exifdata = opened_image.getexif()
+
+
                 x_id = 0x011a
                 y_id = 0x011B
                 x_resolution = exifdata.get(x_id)
@@ -71,31 +87,32 @@ def success(request):
                 opened_image.close()
 
                 new_file_path = os.path.join(settings.MEDIA_ROOT, new_file_name)
-                   
 
                 try:
                     os.rename(path, new_file_path)
                     image.image.name = new_file_name
                     image.save()
-                    
-    
-                except FileNotFoundError:
-                    return HttpResponseNotFound('File not found')
+
+                except (AttributeError, KeyError, IndexError, IOError, ValueError, FileNotFoundError, ValidationError):
+                    value_error = "Something's wrong with the files"
+                    return render(request, 'index.html', {'response_message': value_error})           
                 
-                except TypeError:
-                    return HttpResponse("Metadata error")                
-                
-        except TypeError:
-             return redirect('../success/')
+        except (AttributeError, KeyError, IndexError, IOError, ValueError):
+            value_error = "Value error."
+            return render(request, 'index.html', {'response_message': value_error})
+    if file_num == 0:
+        request.session.flush()
+        return redirect('../upload')  
+
+    context = {
+        'img_list': image_files,
+        'unconverted': prev_files - file_num
+    }
+
+    request.session['action_processed'] = True
         
-        context = {
-            'img_list': image_files
-        }
-            
-        return render(request, 'uploads.html', context)     
-                     
-        
-        
+    return render(request, 'uploads.html', context)     
+             
         
 def download_image(request, image_id):
     image = get_object_or_404(Images, pk=image_id)
@@ -106,15 +123,33 @@ def download_image(request, image_id):
     response['Content-Disposition'] = f'attachment; filename="{file_name}"'
     return response
 
-def delete(request):
+
+def reset_image(request):
+    path = settings.MEDIA_ROOT
+    delete_images(path)
     image_files = Images.objects.all()
     image_files.delete()
+    request.session.flush()
     return redirect('../upload/')
 
-def filename_mask(image_file):
-    file = image_file.split('\\')
-    filesplit = image_file.split('/')
-    filename = filesplit[2]
-    return filename
 
+def has_exif_data(image_file):
+    try:
+        img = Image.open(image_file)
+        exifdata =  img.getexif() 
+        x_id = 0x011a
+        if exifdata:
+            for tagid, value in exifdata.items():
+                if tagid == x_id:
+                    return True
+            return False
+        else:
+            return False
+    except (AttributeError, KeyError, IndexError, IOError, ValueError, FileNotFoundError):
+        return False
 
+def delete_images(directory):
+    if os.path.exists(directory):
+        for filename in os.listdir(directory):
+            filepath = os.path.join(directory, filename)
+            os.remove(filepath)
