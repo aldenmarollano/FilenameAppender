@@ -1,41 +1,36 @@
-<!-- {% load custom_filters %} -->
+{% load custom_filters %}
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <title>Upload Successful</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-</head>
-<body class="bg-dark">
-    <div class="container">
-        <div class="row justify-content-center">
-                    <div class="col-md-5 border rounded mt-5 bg-light text-center">
-                        <div class="card-header bg-light pt-3 pb-2">
-                            <p class="text-center text-primary h4">IMAGE FILES</p>
-                        </div>
-                            <form>
-                                <table class="table">
-                                    <tbody>
-                                        {% for img in img_list %}
-                                        {% csrf_token %}
-                                            <tr>
-                                                <th class="p-3"><a href="{{ img.image.url }}" class="text-dark text-decoration-none text-lg">{{ img.image.name|filename_mask }}</a></th>
-                                                <th><button type="submit" value="{{ image.image.id }}" class="btn btn-mute"><a class="text-decoration-none" href="{% url 'image:download' img.pk %}">Download</a></button></th>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table> 
-                            </form>
-                            <button type="reset" value="reset" class="btn btn-primary text-center btn-center rounded-pill ps-5 pe-5 pt-2 pb-2" ><a class="text-light text-decoration-none" href="{% url 'image:delete' %}">Upload Another</a></button>
-                            {% if unconverted != 0 %}
-                                <p>{{ unconverted }} ignored file(s). Image(s) source not came from editing software. </p>
-                            {% endif %}
-                            <div id="response-area">
-                                {% block response_content %}
-                                    <p>{{ response_message }}</p>
-                                {% endblock %}
-                            </div>
-                    </div>
+    <link rel="stylesheet" href="{% static 'design.css' %}">
+<body>
+    <form class="form">
+        <div class="border-bottom">
+            <p class="upload-form-title">Image Files</p>
         </div>
+        <table class="table">
+            <tbody>
+                {% for img in img_list %}
+                {% csrf_token %}
+                    <tr>
+                        <th><a href="{{ img.image.url }}" class="a-list">{{ img.image.name|filename_mask }}</a></th>
+                        <th><span class="division"></span></th>
+                        <th><button type="submit" value="{{ image.image.id }}" class="upload-button"><a class="text-decoration-none" href="{% url 'image:download' img.pk %}">Download</a></button></th>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table> 
+        <button type="reset" value="reset" class="upload-submit" ><a class="text-light a-button" href="{% url 'image:delete' %}">Upload Another</a></button>
+    </form>
+    {% if unconverted != 0 %}
+        <p>{{ unconverted }} ignored file(s). Image(s) source not came from editing software. </p>
+    {% endif %}
+    <div id="response-area">
+        {% block response_content %}
+            <p>{{ response_message }}</p>
+        {% endblock %}
     </div>
 </body>
 </html>
